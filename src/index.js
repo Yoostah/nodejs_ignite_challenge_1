@@ -42,7 +42,7 @@ app.post('/users', (request, response) => {
 
   users.push(user)
 
-  return response.status(201).json(users)
+  return response.status(201).json(user)
 });
 
 app.use(checksExistsUserName)
@@ -69,11 +69,28 @@ app.post('/todos', (request, response) => {
 
   user.todos.push(todo)
   
-  return response.status(201).json(user.todos)
+  return response.status(201).json(todo)
 });
 
 app.put('/todos/:id', checksExistsUserName, (request, response) => {
-  // Complete aqui
+  const {id} = request.params
+  const {username} = request
+
+  const {title, deadline} = request.body
+
+  if(!title || !deadline){
+    return response.status(500).json({error: 'Required params not sent'})
+  }
+
+  const user = users.find(user => user.username === username)
+  
+  const todo = {title, deadline: new Date(deadline), id:uuidv4(), done:false, created_at: new Date()}
+
+  user.todos.push(todo)
+  
+  return response.status(201).json(todo)
+
+
 });
 
 app.patch('/todos/:id/done', checksExistsUserName, (request, response) => {
