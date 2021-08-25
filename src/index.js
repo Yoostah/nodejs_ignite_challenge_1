@@ -8,29 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const users = [
-  {
-    name: "Thulio Horta",
-    username: "yoostah",
-    id: "41cc04da-ffe0-401f-adf4-5c3a06764dab",
-    todos: [
-      {
-        title: "Estudar Node",
-        deadline: "2020-12-31T00:00:00.000Z",
-        id: "51c03abf-b7fd-491f-8b41-c8304ba7db53",
-        done: false,
-        created_at: "2021-08-25T00:25:30.376Z",
-      },
-      {
-        title: "Estudar React",
-        deadline: "2020-12-31T00:00:00.000Z",
-        id: "5b29f695-477f-465a-b0d0-fb4c165938ea",
-        done: false,
-        created_at: "2021-08-25T00:25:48.817Z",
-      },
-    ],
-  },
-];
+const users = [];
 
 function checksExistsUserAccount(request, response, next) {
   const { username } = request.headers;
