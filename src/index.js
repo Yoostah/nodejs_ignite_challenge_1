@@ -1,104 +1,152 @@
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
 
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-const users = [];
+const users = [
+  {
+    name: "Thulio Horta",
+    username: "yoostah",
+    id: "41cc04da-ffe0-401f-adf4-5c3a06764dab",
+    todos: [
+      {
+        title: "Estudar Node",
+        deadline: "2020-12-31T00:00:00.000Z",
+        id: "51c03abf-b7fd-491f-8b41-c8304ba7db53",
+        done: false,
+        created_at: "2021-08-25T00:25:30.376Z",
+      },
+      {
+        title: "Estudar React",
+        deadline: "2020-12-31T00:00:00.000Z",
+        id: "5b29f695-477f-465a-b0d0-fb4c165938ea",
+        done: false,
+        created_at: "2021-08-25T00:25:48.817Z",
+      },
+    ],
+  },
+];
 
-function checksExistsUserName(request, response, next) {
-  const {username} = request.headers
+function checksExistsUserAccount(request, response, next) {
+  const { username } = request.headers;
 
-  if(!username){
-    return response.status(501).json({error: "Username not sent"})
+  if (!username) {
+    return response.status(501).json({ error: "Username not sent" });
   }
 
-  const user = users.find(user => user.username === username)
+  const user = users.find((user) => user.username === username);
 
-  if (!user){
-    return response.status(404).json({error: "User does not exists"})
+  if (!user) {
+    return response.status(404).json({ error: "User does not exists" });
   }
 
-  request.username = username
+  request.user = user;
 
-  return next()
+  return next();
 }
 
+app.post("/users", (request, response) => {
+  const { name, username } = request.body;
 
-app.post('/users', (request, response) => {
-  const {name, username} = request.body
-
-  const userExists = users.some(user => user.username === username)
-
-  if(userExists){
-    return response.status(400).json({error: 'User already exists!'})
+  if (!name || !username) {
+    return response.status(500).json({ error: "Required params not sent" });
   }
 
-  const user = {name, username, id: uuidv4(), todos: []}
-
-  users.push(user)
-
-  return response.status(201).json(user)
-});
-
-app.use(checksExistsUserName)
-
-app.get('/todos', (request, response) => {
-  const {username} = request
-
-  const user = users.find(user => user.username === username)
-
-  return response.json(user.todos)
-});
-
-app.post('/todos', (request, response) => {
-  const {username} = request
-  const {title, deadline} = request.body
-
-  if(!title || !deadline){
-    return response.status(500).json({error: 'Required params not sent'})
+  const userExists = users.some((user) => user.username === username);
+  if (userExists) {
+    return response.status(400).json({ error: "User already exists!" });
   }
 
-  const user = users.find(user => user.username === username)
-  
-  const todo = {title, deadline: new Date(deadline), id:uuidv4(), done:false, created_at: new Date()}
+  const user = { name, username, id: uuidv4(), todos: [] };
 
-  user.todos.push(todo)
-  
-  return response.status(201).json(todo)
+  users.push(user);
+
+  return response.status(201).json(user);
 });
 
-app.put('/todos/:id', checksExistsUserName, (request, response) => {
-  const {id} = request.params
-  const {username} = request
+app.get("/todos", checksExistsUserAccount, (request, response) => {
+  const { user } = request;
+  return response.json(user.todos);
+});
 
-  const {title, deadline} = request.body
+app.post("/todos", checksExistsUserAccount, (request, response) => {
+  const { user } = request;
+  const { title, deadline } = request.body;
 
-  if(!title || !deadline){
-    return response.status(500).json({error: 'Required params not sent'})
+  if (!title || !deadline) {
+    return response.status(500).json({ error: "Required params not sent" });
   }
 
-  const user = users.find(user => user.username === username)
-  
-  const todo = {title, deadline: new Date(deadline), id:uuidv4(), done:false, created_at: new Date()}
+  const todo = {
+    title,
+    deadline: new Date(deadline),
+    id: uuidv4(),
+    done: false,
+    created_at: new Date(),
+  };
 
-  user.todos.push(todo)
-  
-  return response.status(201).json(todo)
+  user.todos.push(todo);
 
-
+  return response.status(201).json(todo);
 });
 
-app.patch('/todos/:id/done', checksExistsUserName, (request, response) => {
-  // Complete aqui
+app.put("/todos/:id", checksExistsUserAccount, (request, response) => {
+  const { id } = request.params;
+  const { user } = request;
+
+  const { title, deadline } = request.body;
+
+  if (!title || !deadline) {
+    return response.status(500).json({ error: "Required params not sent" });
+  }
+
+  const todoIndex = user.todos.findIndex((todo) => todo.id === id);
+
+  if (todoIndex === -1) {
+    return response.status(404).json({ error: "Todo not Found" });
+  }
+
+  user.todos[todoIndex] = {
+    ...user.todos[todoIndex],
+    title,
+    deadline: new Date(deadline),
+  };
+
+  return response.status(201).json(user.todos[todoIndex]);
 });
 
-app.delete('/todos/:id', checksExistsUserName, (request, response) => {
-  // Complete aqui
+app.patch("/todos/:id/done", checksExistsUserAccount, (request, response) => {
+  const { id } = request.params;
+  const { user } = request;
+
+  const todoIndex = user.todos.findIndex((todo) => todo.id === id);
+
+  if (todoIndex === -1) {
+    return response.status(404).json({ error: "Todo not Found" });
+  }
+
+  user.todos[todoIndex] = { ...user.todos[todoIndex], done: true };
+
+  return response.status(201).json(user.todos[todoIndex]);
+});
+
+app.delete("/todos/:id", checksExistsUserAccount, (request, response) => {
+  const { id } = request.params;
+  const { user } = request;
+
+  const todoExists = user.todos.find((todo) => todo.id === id);
+
+  if (!todoExists) {
+    return response.status(404).json({ error: "Todo not Found" });
+  }
+
+  user.todos = user.todos.filter((todo) => todo.id !== id);
+  return response.status(204).send();
 });
 
 module.exports = app;
